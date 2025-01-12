@@ -3,7 +3,7 @@ _Transform your code into a live storytelling experience._
 
 [![Static Badge](https://img.shields.io/badge/Open%20the%20App-8A2BE2)](https://codeflow.streamlit.app/)
 
-CodeWriter is an app designed for YouTubers, bloggers, and anyone who wants to showcase their code with an engaging typewriter effect. The app dynamically reveals your code line-by-line, making it perfect for educational content, tutorials, or showcasing your programming skills to a broader audience.
+CodeFlow is an app designed for YouTubers, bloggers, and anyone who wants to showcase their code with an engaging typewriter effect. The app dynamically reveals your code line-by-line, making it perfect for educational content, tutorials, or showcasing your programming skills to a broader audience.
 
 ## Features
 
