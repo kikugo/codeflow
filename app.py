@@ -3,7 +3,8 @@ import time
 
 st.set_page_config(
     page_title="CodeFlow",
-    page_icon=":desktop_computer:"
+    page_icon=":desktop_computer:",
+    initial_sidebar_state="expanded"
 )
 
 # Function to display the typewriter effect
@@ -16,8 +17,17 @@ def typewriter_effect(text, language, delay=0.05):
         time.sleep(delay)  # Delay for typewriter effect
 
 # Streamlit app
-st.title("CodeFlow")
-st.write("Transform your code into a live storytelling experience.")
+with st.sidebar:
+    st.title("CodeFlow")
+    st.write("Transform your code into a live storytelling experience.")
+    st.divider()
+    st.header("Usage")
+    st.write("1. Select the programming language.")
+    st.write("2. Enter the code.")
+    st.write("3. Click on the Effect tab to see the typewriter effect.")
+    st.info("Note: You can minimize this sidebar to see the full effect.")
+    st.divider()
+    st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
 
 # Initialize session state for tab tracking if not already initialized
 if 'start_effect' not in st.session_state:
