@@ -47,13 +47,15 @@ SUPPORTED_LANGUAGES = ("Abap", "Abnf", "Actionscript", "Ada", "Agda", "Al", "Ant
         "WebIdl (Web-Idl)", "Wiki", "Wolfram", "Wren", "Xeora", "XmlDoc (Xml-Doc)",
         "Xojo", "Xquery", "Yaml", "Yang", "Zig", "Other")
 
+SYNTAX_THEMES = ["default", "monokai", "dracula", "github-dark"]  # Example themes
+
 st.set_page_config(
     page_title="CodeFlow",
     page_icon=":desktop_computer:",
     initial_sidebar_state="expanded"
 )
 
-# NEW: Embed CSS directly using st.markdown
+# NEW: Embed CSS directly using st.markdown (includes basic code block styling)
 _CSS = """
 <style>
 .dark-theme {
@@ -63,6 +65,12 @@ _CSS = """
 .light-theme {
     background-color: #ffffff;
     color: #000000;
+}
+/* General code block styles */
+.stCodeBlock {
+  overflow: auto; /* Add scrollbars if needed */
+  border-radius: 5px;  /* Optional: Rounded corners */
+  padding: 10px;      /* Optional: Add some padding */
 }
 </style>
 """
@@ -82,7 +90,7 @@ def get_file_extension(filename: str) -> str:
     return os.path.splitext(filename)[1][1:].lower()
 
 # --- Main App Logic ---
-def main() -> None: # Defined the main function
+def main() -> None:
     """Main function to run the Streamlit app."""
 
     # Streamlit app
@@ -111,6 +119,8 @@ def main() -> None: # Defined the main function
         st.session_state.line_numbers = True
     if "theme" not in st.session_state:
         st.session_state["theme"] = "light"
+    if 'syntax_theme' not in st.session_state:  # NEW: Initialize syntax_theme
+        st.session_state.syntax_theme = 'default'
 
     data, effect = st.tabs(["Data", "Effect"])
 
@@ -128,6 +138,9 @@ def main() -> None: # Defined the main function
         st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
         st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
         st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
+
+        # NEW: Syntax Highlighting Theme Selection
+        st.session_state.syntax_theme = st.selectbox("Syntax Highlighting Theme", SYNTAX_THEMES, index=0)
 
         uploaded_file = st.file_uploader("Upload Code File", type=None)
 
@@ -158,13 +171,19 @@ def main() -> None: # Defined the main function
         if effect:
             st.session_state.start_effect = True
 
-        if st.session_state.start_effect and st.session_state.code_text and st.session_state.language:
-            time.sleep(5)
-            if st.session_state.language == "Other":
-                st.session_state.language = None
+        # NEW: Input Validation
+        if st.session_state.start_effect:
+            if not st.session_state.code_text:
+                st.warning("Please enter or upload code in the 'Data' tab.")
+            elif not st.session_state.language:
+                st.warning("Please select a language in the 'Data' tab.")
             else:
-                st.session_state.language = st.session_state.language.lower()
-            typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
+                # Apply syntax highlighting theme (using external CSS files)
+                if st.session_state.syntax_theme != "default":
+                    st.markdown(f'<link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-{st.session_state.syntax_theme}.min.css" rel="stylesheet" />', unsafe_allow_html=True)
+
+                time.sleep(1)  # Shorter delay
+                typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
 
     # Close the theme div
     st.markdown('</div>', unsafe_allow_html=True)
