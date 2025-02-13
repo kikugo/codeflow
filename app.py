@@ -2,7 +2,7 @@ import streamlit as st
 import time
 
 # --- Constants ---
-DEFAULT_DELAY = 0.05  # NEW: Constant for default delay
+DEFAULT_DELAY = 0.05
 
 st.set_page_config(
     page_title="CodeFlow",
@@ -10,14 +10,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Function to display the typewriter effect (modified to accept delay)
-def typewriter_effect(text, language, delay=DEFAULT_DELAY):  # MODIFIED: Added delay parameter
+# Function to display the typewriter effect (modified for line numbers)
+def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):  # MODIFIED: Added line_numbers
     placeholder = st.empty()
     current_text = ""
     for char in text:
         current_text += char
-        placeholder.code(current_text, language=language, line_numbers=True, wrap_lines=True)
-        time.sleep(delay)  # Use the delay parameter
+        placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True) # MODIFIED: Use line_numbers
+        time.sleep(delay)
 
 # Streamlit app
 with st.sidebar:
@@ -32,18 +32,17 @@ with st.sidebar:
     st.divider()
     st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
 
-# Initialize session state for tab tracking if not already initialized
+# Initialize session state
 if 'start_effect' not in st.session_state:
     st.session_state.start_effect = False
-
 if 'code_text' not in st.session_state:
     st.session_state.code_text = ""
-
 if 'language' not in st.session_state:
     st.session_state.language = ""
-
-if 'delay' not in st.session_state: # NEW: Initialize delay in session state
-    st.session_state.delay = DEFAULT_DELAY
+if 'delay' not in st.session_state:
+        st.session_state.delay = DEFAULT_DELAY
+if 'line_numbers' not in st.session_state:  # NEW: Initialize line_numbers
+    st.session_state.line_numbers = True
 
 data, effect = st.tabs(["Data", "Effect"])
 
@@ -95,12 +94,13 @@ with data:
         index=None,
         placeholder="Select the programming language...",
     )
-    # NEW: Add a slider for delay control
     st.session_state.delay = st.slider("Typing Speed (Delay)", min_value=0.01, max_value=0.5, value=DEFAULT_DELAY, step=0.01)
+
+    # NEW: Add a checkbox for line numbers
+    st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
 
     if st.session_state.language:
         st.session_state.code_text = st.text_area("Enter the code below:", height=500)
-
 
 with effect:
     # Set the session state flag when the Effect tab is clicked
@@ -109,9 +109,10 @@ with effect:
 
     # Trigger the typewriter effect only if the Effect tab is active and code is provided
     if st.session_state.start_effect and st.session_state.code_text and st.session_state.language:
-        time.sleep(5)  # Add a small delay to allow users to see the transition
+        time.sleep(5)
         if st.session_state.language == "Other":
             st.session_state.language = None
         else:
             st.session_state.language = st.session_state.language.lower()
-        typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay) #Pass delay
+        # MODIFIED: Pass line_numbers to typewriter_effect
+        typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
