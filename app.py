@@ -1,55 +1,10 @@
 import streamlit as st
 import time
+import os  # NEW: Import the os module
 
 # --- Constants ---
 DEFAULT_DELAY = 0.05
-
-st.set_page_config(
-    page_title="CodeFlow",
-    page_icon=":desktop_computer:",
-    initial_sidebar_state="expanded"
-)
-
-# Function to display the typewriter effect (modified for line numbers)
-def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):  # MODIFIED: Added line_numbers
-    placeholder = st.empty()
-    current_text = ""
-    for char in text:
-        current_text += char
-        placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True) # MODIFIED: Use line_numbers
-        time.sleep(delay)
-
-# Streamlit app
-with st.sidebar:
-    st.title("CodeFlow")
-    st.write("Transform your code into a live storytelling experience.")
-    st.divider()
-    st.header("Usage")
-    st.write("1. Select the programming language.")
-    st.write("2. Enter the code.")
-    st.write("3. Click on the Effect tab to see the typewriter effect.")
-    st.info("Note: You can minimize this sidebar to see the full effect.")
-    st.divider()
-    st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
-
-# Initialize session state
-if 'start_effect' not in st.session_state:
-    st.session_state.start_effect = False
-if 'code_text' not in st.session_state:
-    st.session_state.code_text = ""
-if 'language' not in st.session_state:
-    st.session_state.language = ""
-if 'delay' not in st.session_state:
-        st.session_state.delay = DEFAULT_DELAY
-if 'line_numbers' not in st.session_state:  # NEW: Initialize line_numbers
-    st.session_state.line_numbers = True
-
-data, effect = st.tabs(["Data", "Effect"])
-
-with data:
-    st.session_state.language = st.selectbox(
-        "Please select the programming language the code is written in:",
-        ("Abap", "Abnf", "Actionscript", "Ada", "Agda", "Al", "Antlr4", "Apacheconf",
+SUPPORTED_LANGUAGES = ("Abap", "Abnf", "Actionscript", "Ada", "Agda", "Al", "Antlr4", "Apacheconf",
         "Apex", "Apl", "Applescript", "Aql", "Arduino", "Arff", "Asciidoc", "Asm6502",
         "Asmatmel", "Aspnet", "Autohotkey", "Autoit", "Avisynth", "AvroIdl (Avro-Idl)",
         "Bash", "Basic", "Batch", "Bbcode", "Bicep", "Birb", "Bison", "Bnf",
@@ -90,29 +45,98 @@ with data:
         "Unrealscript", "Uorazor", "Uri", "V", "Vala", "Vbnet", "Velocity", "Verilog",
         "Vhdl", "Vim", "VisualBasic (Visual-Basic)", "Warpscript", "Wasm",
         "WebIdl (Web-Idl)", "Wiki", "Wolfram", "Wren", "Xeora", "XmlDoc (Xml-Doc)",
-        "Xojo", "Xquery", "Yaml", "Yang", "Zig", "Other"),
-        index=None,
-        placeholder="Select the programming language...",
-    )
-    st.session_state.delay = st.slider("Typing Speed (Delay)", min_value=0.01, max_value=0.5, value=DEFAULT_DELAY, step=0.01)
+        "Xojo", "Xquery", "Yaml", "Yang", "Zig", "Other")
 
-    # NEW: Add a checkbox for line numbers
+st.set_page_config(
+    page_title="CodeFlow",
+    page_icon=":desktop_computer:",
+    initial_sidebar_state="expanded"
+)
+
+# Function to display the typewriter effect
+def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):
+    placeholder = st.empty()
+    current_text = ""
+    for char in text:
+        current_text += char
+        placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True)
+        time.sleep(delay)
+
+# NEW: Utility function to get file extension
+def get_file_extension(filename: str) -> str:
+    """Extracts the file extension from a filename (e.g., 'app.py' -> 'py')."""
+    return os.path.splitext(filename)[1][1:].lower()
+
+# Streamlit app
+with st.sidebar:
+    st.title("CodeFlow")
+    st.write("Transform your code into a live storytelling experience.")
+    st.divider()
+    st.header("Usage")
+    st.write("1. Select language and options.")
+    st.write("2. Enter code or upload a file.")
+    st.write("3. Click 'Effect' to view.")
+    st.info("Note: Minimize sidebar for full effect.")
+    st.divider()
+    st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
+
+# Initialize session state
+if 'start_effect' not in st.session_state:
+    st.session_state.start_effect = False
+if 'code_text' not in st.session_state:
+    st.session_state.code_text = ""
+if 'language' not in st.session_state:
+    st.session_state.language = ""
+if 'delay' not in st.session_state:
+    st.session_state.delay = DEFAULT_DELAY
+if 'line_numbers' not in st.session_state:
+    st.session_state.line_numbers = True
+
+data, effect = st.tabs(["Data", "Effect"])
+
+with data:
+    st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
+    st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
     st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
 
-    if st.session_state.language:
-        st.session_state.code_text = st.text_area("Enter the code below:", height=500)
+    # NEW: File uploader
+    uploaded_file = st.file_uploader("Upload Code File", type=None)  # Allow any file type
 
+    if uploaded_file is not None:
+        try:
+            # Read the file content
+            file_content = uploaded_file.read().decode("utf-8")  # Decode for text files
+            st.session_state.code_text = file_content
+
+            # Attempt to auto-detect language from file extension
+            detected_language = get_file_extension(uploaded_file.name)
+            if detected_language in map(str.lower, SUPPORTED_LANGUAGES):
+                # Find the index of the detected language (case-insensitive)
+                try:
+                    lang_index = [lang.lower() for lang in SUPPORTED_LANGUAGES].index(detected_language)
+                    st.session_state.language = SUPPORTED_LANGUAGES[lang_index]  # Set to correct case
+                    st.success(f"Detected language: {st.session_state.language}")
+                except ValueError:
+                    st.warning(f"Detected extension '{detected_language}', but could not set language.")
+
+        except UnicodeDecodeError:
+            st.error("Could not decode the uploaded file. Please ensure it's a text file.")
+            st.session_state.code_text = ""  # Prevent errors later
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
+            st.session_state.code_text = ""
+
+    # Text area *always* shown, but only populated if no upload error
+    if st.session_state.language:
+        st.session_state.code_text = st.text_area("Enter/Edit Code:", value=st.session_state.code_text, height=300)
 with effect:
-    # Set the session state flag when the Effect tab is clicked
     if effect:
         st.session_state.start_effect = True
 
-    # Trigger the typewriter effect only if the Effect tab is active and code is provided
     if st.session_state.start_effect and st.session_state.code_text and st.session_state.language:
         time.sleep(5)
         if st.session_state.language == "Other":
             st.session_state.language = None
         else:
             st.session_state.language = st.session_state.language.lower()
-        # MODIFIED: Pass line_numbers to typewriter_effect
         typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
