@@ -52,10 +52,10 @@ SYNTAX_THEMES = ["default", "monokai", "dracula", "github-dark"]
 st.set_page_config(
     page_title="CodeFlow",
     page_icon=":desktop_computer:",
-    initial_sidebar_state="expanded"
+    layout="wide" # Setting the layout to wide
 )
 
-# NEW: Embed CSS (includes styling for the progress message)
+# Embed CSS
 _CSS = """
 <style>
 .dark-theme {
@@ -71,7 +71,6 @@ _CSS = """
   border-radius: 5px;
   padding: 10px;
 }
-/* NEW: Style for the progress message*/
 .progress-message {
     font-style: italic;
     color: gray;
@@ -81,32 +80,30 @@ _CSS = """
 st.markdown(_CSS, unsafe_allow_html=True)
 
 
-# MODIFIED: Typewriter Effect Function (with error handling and progress)
-def typewriter_effect(text: str, language: str, delay: float, line_numbers: bool) -> None:
-    """Displays code with a typewriter effect, handling potential errors."""
+# --- Utility Functions ---
+def typewriter_effect(text: str, language: str, delay: float, line_numbers: bool, wrap_lines: bool) -> None:
+    """Displays code with a typewriter effect."""
     placeholder = st.empty()
     current_text = ""
-    progress_message = st.empty()  # For the "Typing..." message
+    progress_message = st.empty()
 
     for i, char in enumerate(text):
         current_text += char
-        progress_message.markdown(f"<p class='progress-message'>Typing... {i+1}/{len(text)} characters</p>", unsafe_allow_html=True) #Progress message
+        progress_message.markdown(f"<p class='progress-message'>Typing... {i+1}/{len(text)} characters</p>", unsafe_allow_html=True)
         try:
-            placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True)
+            placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=wrap_lines)
         except Exception as e:
             st.error(f"An error occurred: {e}")
-            return  # Stop the effect if there's an error
+            return
         time.sleep(delay)
-    progress_message.empty() # Remove the message when finished.
+    progress_message.empty()
 
 def get_file_extension(filename: str) -> str:
     return os.path.splitext(filename)[1][1:].lower()
 
-# --- Main App Logic ---
-def main() -> None:
-    """Main function to run the Streamlit app."""
-
-    # Streamlit app
+# --- Sidebar ---
+def render_sidebar() -> None:
+    """Renders the sidebar with information and links."""
     with st.sidebar:
         st.title("CodeFlow")
         st.write("Transform your code into a live storytelling experience.")
@@ -119,7 +116,72 @@ def main() -> None:
         st.divider()
         st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
 
-    # Initialize session state
+# --- Data Tab ---
+def handle_data_tab() -> None:
+    """Handles the logic for the 'Data' tab."""
+    st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
+    st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
+    st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
+    # NEW: Word Wrap Toggle
+    st.session_state.wrap_lines = st.checkbox("Wrap Lines", value=True)
+    st.session_state.syntax_theme = st.selectbox("Syntax Highlighting Theme", SYNTAX_THEMES, index=0)
+
+    uploaded_file = st.file_uploader("Upload Code File", type=None)
+
+    if uploaded_file is not None:
+        try:
+            file_content = uploaded_file.read().decode("utf-8")
+            st.session_state.code_text = file_content
+
+            detected_language = get_file_extension(uploaded_file.name)
+            if detected_language in map(str.lower, SUPPORTED_LANGUAGES):
+                try:
+                    lang_index = [lang.lower() for lang in SUPPORTED_LANGUAGES].index(detected_language)
+                    st.session_state.language = SUPPORTED_LANGUAGES[lang_index]
+                    st.success(f"Detected language: {st.session_state.language}")
+                except ValueError:
+                    st.warning(f"Detected extension '{detected_language}', but could not set language.")
+        except UnicodeDecodeError:
+            st.error("Could not decode the uploaded file. Please ensure it's a text file.")
+            st.session_state.code_text = ""
+        except Exception as e:
+            st.error(f"Error processing file: {e}")
+            st.session_state.code_text = ""
+
+    if st.session_state.language:
+        st.session_state.code_text = st.text_area("Enter/Edit Code:", value=st.session_state.code_text, height=300)
+
+     # NEW: Reset Button
+    if st.button("Reset"):
+        st.session_state.code_text = ""
+        st.session_state.language = None  # Reset to no language selected
+        # st.session_state.delay = DEFAULT_DELAY #No need, we have it initialized.
+        # We keep previous configurations. Only reset code and language.
+
+# --- Effect Tab ---
+def handle_effect_tab() -> None:
+    """Handles the logic for the 'Effect' tab."""
+    if st.session_state.start_effect:
+        if not st.session_state.code_text:
+            st.warning("Please enter or upload code in the 'Data' tab.")
+        elif not st.session_state.language:
+            st.warning("Please select a language in the 'Data' tab.")
+        else:
+            if st.session_state.syntax_theme != "default":
+                st.markdown(f'<link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-{st.session_state.syntax_theme}.min.css" rel="stylesheet" />', unsafe_allow_html=True)
+
+            time.sleep(1)
+            typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers, wrap_lines=st.session_state.wrap_lines)
+
+            if st.button("Replay"):
+                time.sleep(1)
+                typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers, wrap_lines=st.session_state.wrap_lines)
+
+# --- Main App Logic ---
+def main() -> None:
+    """Main function to run the Streamlit app."""
+
+    # Initialize session state (moved inside main() for clarity)
     if 'start_effect' not in st.session_state:
         st.session_state.start_effect = False
     if 'code_text' not in st.session_state:
@@ -130,77 +192,35 @@ def main() -> None:
         st.session_state.delay = DEFAULT_DELAY
     if 'line_numbers' not in st.session_state:
         st.session_state.line_numbers = True
+    if 'wrap_lines' not in st.session_state:  # NEW: Initialize wrap_lines
+        st.session_state.wrap_lines = True
     if "theme" not in st.session_state:
         st.session_state["theme"] = "light"
     if 'syntax_theme' not in st.session_state:
         st.session_state.syntax_theme = 'default'
 
-    data, effect = st.tabs(["Data", "Effect"])
-
-    # Theme switching
+   # Theme switching
     theme_toggle = st.checkbox("Dark Mode", value=st.session_state["theme"] == "dark")
     st.session_state["theme"] = "dark" if theme_toggle else "light"
 
-    # Apply the theme using CSS classes
+    # Apply theme
     if st.session_state["theme"] == "dark":
         st.markdown('<div class="dark-theme">', unsafe_allow_html=True)
     else:
         st.markdown('<div class="light-theme">', unsafe_allow_html=True)
 
+    render_sidebar()  # Call the sidebar rendering function
+
+    data, effect = st.tabs(["Data", "Effect"])
+
     with data:
-        st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
-        st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
-        st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
-        st.session_state.syntax_theme = st.selectbox("Syntax Highlighting Theme", SYNTAX_THEMES, index=0)
-
-        uploaded_file = st.file_uploader("Upload Code File", type=None)
-
-        if uploaded_file is not None:
-            try:
-                file_content = uploaded_file.read().decode("utf-8")
-                st.session_state.code_text = file_content
-
-                detected_language = get_file_extension(uploaded_file.name)
-                if detected_language in map(str.lower, SUPPORTED_LANGUAGES):
-                    try:
-                        lang_index = [lang.lower() for lang in SUPPORTED_LANGUAGES].index(detected_language)
-                        st.session_state.language = SUPPORTED_LANGUAGES[lang_index]
-                        st.success(f"Detected language: {st.session_state.language}")
-                    except ValueError:
-                        st.warning(f"Detected extension '{detected_language}', but could not set language.")
-            except UnicodeDecodeError:
-                st.error("Could not decode the uploaded file. Please ensure it's a text file.")
-                st.session_state.code_text = ""
-            except Exception as e:
-                st.error(f"Error processing file: {e}")
-                st.session_state.code_text = ""
-
-        if st.session_state.language:
-            st.session_state.code_text = st.text_area("Enter/Edit Code:", value=st.session_state.code_text, height=300)
-
+        handle_data_tab()  # Call the data tab handling function
     with effect:
         if effect:
             st.session_state.start_effect = True
+        handle_effect_tab()  # Call the effect tab handling function
 
-        if st.session_state.start_effect:
-            if not st.session_state.code_text:
-                st.warning("Please enter or upload code in the 'Data' tab.")
-            elif not st.session_state.language:
-                st.warning("Please select a language in the 'Data' tab.")
-            else:
-                if st.session_state.syntax_theme != "default":
-                    st.markdown(f'<link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-{st.session_state.syntax_theme}.min.css" rel="stylesheet" />', unsafe_allow_html=True)
-
-                time.sleep(1)
-                typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
-
-                # NEW: Replay Button
-                if st.button("Replay"):
-                    time.sleep(1)  # Add a short delay before replaying
-                    typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
-
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)  # Close theme div
 
 if __name__ == "__main__":
     main()
