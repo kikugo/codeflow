@@ -1,65 +1,92 @@
-# CodeFlow
-_Transform your code into a live storytelling experience._
+# Enhanced CodeFlow
 
-[![Static Badge](https://img.shields.io/badge/Open%20the%20App-8A2BE2)](https://codeflow.streamlit.app/)
+This project is an enhanced version of [CodeFlow](https://github.com/rajtilakjee/codeflow), originally created by [Rajtilak](https://github.com/rajtilakjee). It provides a typewriter effect for displaying code, making it ideal for tutorials, presentations, and educational content. This version includes several new features and improvements.
 
-CodeFlow is an app designed for YouTubers, bloggers, and anyone who wants to showcase their code with an engaging typewriter effect. The app dynamically reveals your code line-by-line, making it perfect for educational content, tutorials, or showcasing your programming skills to a broader audience.
+**Original Project:** [CodeFlow by Rajtilak](https://github.com/rajtilakjee/codeflow)
 
-## Features
+**License:** This project is licensed under the GNU General Public License version 3 (GPL-3.0). See the [LICENSE](LICENSE) file for details.
 
-- **Typewriter Effect:** Display your code with a realistic typewriter effect to captivate your audience.
-- **Multiple Programming Languages:** Support a total of 277 programming languages including Python, JavaScript, and more.
-- **Decluttered Interface:** Select the programming language and enter your code in the first tab, then view and record the effect on another tab.
-- **Recording Functionality:** This app has been created using Streamlit which has an in-built screen recording funtionality.
+## Enhancements
 
-## Installation
+This enhanced version of CodeFlow includes the following new features:
 
-### Prerequisites
-To run this app locally, you need to have Python installed on your machine. The app is built using Streamlit, a Python library for creating interactive web apps.
+*   **Delay Control:** Adjust the typing speed of the typewriter effect using a slider.
+*   **Line Number Toggle:** Show or hide line numbers in the code display.
+*   **File Upload:** Upload code files directly instead of just pasting text.  Supports various programming languages.
+*   **Theme Switching (Light/Dark):** Switch between light and dark themes for better visual comfort.
+*   **Syntax Highlighting Theme Selection:** Choose from different syntax highlighting themes (e.g., Monokai, Dracula, GitHub Dark) to customize the code's appearance.
+*   **Input Validation:** The app checks for code input and language selection before running the effect, preventing errors.
+*   **Error Handling:** Includes `try...except` blocks to gracefully handle potential errors during code rendering.
+*   **Progress Message:** Displays a "Typing..." message with progress indication during the typewriter effect.
+*   **"Replay" Button:** Replay the typewriter effect without switching tabs.
+*   **"Reset" Button:** Clear the code input and language selection.
+*   **Word Wrap Toggle:** Enable or disable word wrapping for long lines of code.
+*   **Code Refactoring:** The code has been reorganized into functions for better readability, maintainability, and testability. Includes type hints and comments.
+*   **Embedded CSS:** Styling is handled directly within the `app.py` file, eliminating the need for a separate `style.css` file.
+*   **Automatic Language Detection (Basic):** Attempts to detect the programming language based on the uploaded file's extension.
 
-#### Step 1: Clone the repository
-First, clone the repository to your local machine:
-```bash
-git clone https://github.com/rajtilakjee/codeflow.git
-cd codeflow
-```
+## Installation and Usage
 
-#### Step 2: Install Dependencies
-Install the necessary dependencies using `pip`:
-```bash
-pip install -r requirements.txt
-```
+To run this application, you'll need [Git](https://git-scm.com) and [Python](https://www.python.org/downloads/) (version 3.7 or higher is recommended) installed on your computer.
 
-#### Step 3: Run the App
-Once the dependencies are installed, you can start the app with the following command:
-```bash
-streamlit run app.py
-```
+1.  **Clone the repository:**
 
-Visit `http://localhost:8501` in your browser to view the app.
+    ```bash
+    git clone <your_forked_repo_url>  # Replace with YOUR forked repository URL
+    cd <your_repo_name>  # e.g., cd codeflow
+    ```
 
-## Usage
+2.  **Create and Activate a Conda Environment (Recommended):**
 
-- **Select Programming Language:** Choose the language of the code you want to showcase from a dropdown menu.
-- **Enter Code:** Paste or type your code in the provided text area.
-- **Click on the Effect Tab:** The typewriter effect will begin, revealing your code line-by-line.
+    It's highly recommended to use a Conda environment to manage dependencies:
+
+    ```bash
+    conda create -n codeflow-env python=3.9  # Or your preferred Python version
+    conda activate codeflow-env
+    ```
+
+3.  **Install Dependencies:**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Run the App:**
+
+    ```bash
+    streamlit run app.py
+    ```
+
+    This will start the Streamlit server, and the app will open in your web browser.
+
+## Usage Instructions
+
+1.  **Select a Programming Language:** Use the dropdown menu in the "Data" tab to choose the language of the code you want to display.
+2.  **Enter or Upload Code:**
+    *   **Paste Code:** Paste your code directly into the text area.
+    *   **Upload File:** Click the "Browse files" button to upload a code file. The app will attempt to detect the language automatically.
+3.  **Adjust Settings:**
+    *   **Typing Speed (Delay):** Use the slider to control the speed of the typewriter effect.
+    *   **Show Line Numbers:** Toggle line numbers on or off.
+    *   **Wrap Lines**: Toggle word wrap on or off.
+    *   **Syntax Highlighting Theme:** Select a theme from the dropdown.
+    *   **Dark Mode:** Toggle between light and dark themes.
+4.  **View the Effect:** Switch to the "Effect" tab to see the typewriter effect in action.
+5.  **Replay:** Click the "Replay" button to run the effect again.
+6.  **Reset:** Click the "Reset" button to clear the input.
 
 ## Contributing
-We welcome contributions! If you'd like to improve the app, please fork the repository and create a pull request. Make sure to follow the guidelines and write clear commit messages.
 
-### How to Contribute
+Contributions are welcome! If you'd like to contribute to this project, please follow these steps:
 
-- Fork the repo.
-- Create a new branch (`git checkout -b feature-name`).
-- Make your changes.
-- Commit your changes (`git commit -am 'Add feature'`).
-- Push to the branch (`git push origin feature-name`).
-- Create a pull request.
+1.  Fork the repository.
+2.  Create a new branch for your feature or bug fix: `git checkout -b feature/your-feature-name` or `git checkout -b bugfix/your-bug-fix`.
+3.  Make your changes and commit them with clear, descriptive commit messages.
+4.  Push your branch to your forked repository: `git push origin feature/your-feature-name`.
+5.  Create a pull request from your branch to the `main` branch of this repository.
 
-## License
+Please ensure your code adheres to the GPL-3.0 license.
 
-This project is licensed under GPL-3.0 - see the [LICENSE](LICENSE) file for details.
+## Acknowledgements
 
-## Contact
-
-For support, please create a [GitHub issue](https://github.com/rajtilakjee/codeflow/issues).
+This project is built upon the original CodeFlow by [Rajtilak](https://github.com/rajtilakjee). Thanks to Rajtilak for creating the original application!
