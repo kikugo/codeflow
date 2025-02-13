@@ -47,7 +47,7 @@ SUPPORTED_LANGUAGES = ("Abap", "Abnf", "Actionscript", "Ada", "Agda", "Al", "Ant
         "WebIdl (Web-Idl)", "Wiki", "Wolfram", "Wren", "Xeora", "XmlDoc (Xml-Doc)",
         "Xojo", "Xquery", "Yaml", "Yang", "Zig", "Other")
 
-SYNTAX_THEMES = ["default", "monokai", "dracula", "github-dark"]  # Example themes
+SYNTAX_THEMES = ["default", "monokai", "dracula", "github-dark"]
 
 st.set_page_config(
     page_title="CodeFlow",
@@ -55,7 +55,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# NEW: Embed CSS directly using st.markdown (includes basic code block styling)
+# NEW: Embed CSS (includes styling for the progress message)
 _CSS = """
 <style>
 .dark-theme {
@@ -66,25 +66,38 @@ _CSS = """
     background-color: #ffffff;
     color: #000000;
 }
-/* General code block styles */
 .stCodeBlock {
-  overflow: auto; /* Add scrollbars if needed */
-  border-radius: 5px;  /* Optional: Rounded corners */
-  padding: 10px;      /* Optional: Add some padding */
+  overflow: auto;
+  border-radius: 5px;
+  padding: 10px;
+}
+/* NEW: Style for the progress message*/
+.progress-message {
+    font-style: italic;
+    color: gray;
 }
 </style>
 """
 st.markdown(_CSS, unsafe_allow_html=True)
 
 
-# Function to display the typewriter effect
-def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):
+# MODIFIED: Typewriter Effect Function (with error handling and progress)
+def typewriter_effect(text: str, language: str, delay: float, line_numbers: bool) -> None:
+    """Displays code with a typewriter effect, handling potential errors."""
     placeholder = st.empty()
     current_text = ""
-    for char in text:
+    progress_message = st.empty()  # For the "Typing..." message
+
+    for i, char in enumerate(text):
         current_text += char
-        placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True)
+        progress_message.markdown(f"<p class='progress-message'>Typing... {i+1}/{len(text)} characters</p>", unsafe_allow_html=True) #Progress message
+        try:
+            placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True)
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
+            return  # Stop the effect if there's an error
         time.sleep(delay)
+    progress_message.empty() # Remove the message when finished.
 
 def get_file_extension(filename: str) -> str:
     return os.path.splitext(filename)[1][1:].lower()
@@ -119,7 +132,7 @@ def main() -> None:
         st.session_state.line_numbers = True
     if "theme" not in st.session_state:
         st.session_state["theme"] = "light"
-    if 'syntax_theme' not in st.session_state:  # NEW: Initialize syntax_theme
+    if 'syntax_theme' not in st.session_state:
         st.session_state.syntax_theme = 'default'
 
     data, effect = st.tabs(["Data", "Effect"])
@@ -138,8 +151,6 @@ def main() -> None:
         st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
         st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
         st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
-
-        # NEW: Syntax Highlighting Theme Selection
         st.session_state.syntax_theme = st.selectbox("Syntax Highlighting Theme", SYNTAX_THEMES, index=0)
 
         uploaded_file = st.file_uploader("Upload Code File", type=None)
@@ -171,21 +182,24 @@ def main() -> None:
         if effect:
             st.session_state.start_effect = True
 
-        # NEW: Input Validation
         if st.session_state.start_effect:
             if not st.session_state.code_text:
                 st.warning("Please enter or upload code in the 'Data' tab.")
             elif not st.session_state.language:
                 st.warning("Please select a language in the 'Data' tab.")
             else:
-                # Apply syntax highlighting theme (using external CSS files)
                 if st.session_state.syntax_theme != "default":
                     st.markdown(f'<link href="https://cdnjs.cloudflare.com/ajax/libs/prism-themes/1.9.0/prism-{st.session_state.syntax_theme}.min.css" rel="stylesheet" />', unsafe_allow_html=True)
 
-                time.sleep(1)  # Shorter delay
+                time.sleep(1)
                 typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
 
-    # Close the theme div
+                # NEW: Replay Button
+                if st.button("Replay"):
+                    time.sleep(1)  # Add a short delay before replaying
+                    typewriter_effect(st.session_state.code_text, language=st.session_state.language.lower(), delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
+
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
