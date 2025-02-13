@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-import os  # NEW: Import the os module
+import os
 
 # --- Constants ---
 DEFAULT_DELAY = 0.05
@@ -53,6 +53,22 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# NEW: Embed CSS directly using st.markdown
+_CSS = """
+<style>
+.dark-theme {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+.light-theme {
+    background-color: #ffffff;
+    color: #000000;
+}
+</style>
+"""
+st.markdown(_CSS, unsafe_allow_html=True)
+
+
 # Function to display the typewriter effect
 def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):
     placeholder = st.empty()
@@ -62,81 +78,96 @@ def typewriter_effect(text, language, delay=DEFAULT_DELAY, line_numbers=True):
         placeholder.code(current_text, language=language, line_numbers=line_numbers, wrap_lines=True)
         time.sleep(delay)
 
-# NEW: Utility function to get file extension
 def get_file_extension(filename: str) -> str:
-    """Extracts the file extension from a filename (e.g., 'app.py' -> 'py')."""
     return os.path.splitext(filename)[1][1:].lower()
 
-# Streamlit app
-with st.sidebar:
-    st.title("CodeFlow")
-    st.write("Transform your code into a live storytelling experience.")
-    st.divider()
-    st.header("Usage")
-    st.write("1. Select language and options.")
-    st.write("2. Enter code or upload a file.")
-    st.write("3. Click 'Effect' to view.")
-    st.info("Note: Minimize sidebar for full effect.")
-    st.divider()
-    st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
+# --- Main App Logic ---
+def main() -> None: # Defined the main function
+    """Main function to run the Streamlit app."""
 
-# Initialize session state
-if 'start_effect' not in st.session_state:
-    st.session_state.start_effect = False
-if 'code_text' not in st.session_state:
-    st.session_state.code_text = ""
-if 'language' not in st.session_state:
-    st.session_state.language = ""
-if 'delay' not in st.session_state:
-    st.session_state.delay = DEFAULT_DELAY
-if 'line_numbers' not in st.session_state:
-    st.session_state.line_numbers = True
+    # Streamlit app
+    with st.sidebar:
+        st.title("CodeFlow")
+        st.write("Transform your code into a live storytelling experience.")
+        st.divider()
+        st.header("Usage")
+        st.write("1. Select language and options.")
+        st.write("2. Enter code or upload a file.")
+        st.write("3. Click 'Effect' to view.")
+        st.info("Note: Minimize sidebar for full effect.")
+        st.divider()
+        st.write("Made with :heart: by [Rajtilak](https://github.com/rajtilakjee/codeflow)")
 
-data, effect = st.tabs(["Data", "Effect"])
+    # Initialize session state
+    if 'start_effect' not in st.session_state:
+        st.session_state.start_effect = False
+    if 'code_text' not in st.session_state:
+        st.session_state.code_text = ""
+    if 'language' not in st.session_state:
+        st.session_state.language = ""
+    if 'delay' not in st.session_state:
+        st.session_state.delay = DEFAULT_DELAY
+    if 'line_numbers' not in st.session_state:
+        st.session_state.line_numbers = True
+    if "theme" not in st.session_state:
+        st.session_state["theme"] = "light"
 
-with data:
-    st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
-    st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
-    st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
+    data, effect = st.tabs(["Data", "Effect"])
 
-    # NEW: File uploader
-    uploaded_file = st.file_uploader("Upload Code File", type=None)  # Allow any file type
+    # Theme switching
+    theme_toggle = st.checkbox("Dark Mode", value=st.session_state["theme"] == "dark")
+    st.session_state["theme"] = "dark" if theme_toggle else "light"
 
-    if uploaded_file is not None:
-        try:
-            # Read the file content
-            file_content = uploaded_file.read().decode("utf-8")  # Decode for text files
-            st.session_state.code_text = file_content
+    # Apply the theme using CSS classes
+    if st.session_state["theme"] == "dark":
+        st.markdown('<div class="dark-theme">', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="light-theme">', unsafe_allow_html=True)
 
-            # Attempt to auto-detect language from file extension
-            detected_language = get_file_extension(uploaded_file.name)
-            if detected_language in map(str.lower, SUPPORTED_LANGUAGES):
-                # Find the index of the detected language (case-insensitive)
-                try:
-                    lang_index = [lang.lower() for lang in SUPPORTED_LANGUAGES].index(detected_language)
-                    st.session_state.language = SUPPORTED_LANGUAGES[lang_index]  # Set to correct case
-                    st.success(f"Detected language: {st.session_state.language}")
-                except ValueError:
-                    st.warning(f"Detected extension '{detected_language}', but could not set language.")
+    with data:
+        st.session_state.language = st.selectbox("Programming Language", SUPPORTED_LANGUAGES, index=None, placeholder="Select a language...")
+        st.session_state.delay = st.slider("Typing Speed (Delay)", 0.01, 0.5, DEFAULT_DELAY, 0.01)
+        st.session_state.line_numbers = st.checkbox("Show Line Numbers", value=True)
 
-        except UnicodeDecodeError:
-            st.error("Could not decode the uploaded file. Please ensure it's a text file.")
-            st.session_state.code_text = ""  # Prevent errors later
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-            st.session_state.code_text = ""
+        uploaded_file = st.file_uploader("Upload Code File", type=None)
 
-    # Text area *always* shown, but only populated if no upload error
-    if st.session_state.language:
-        st.session_state.code_text = st.text_area("Enter/Edit Code:", value=st.session_state.code_text, height=300)
-with effect:
-    if effect:
-        st.session_state.start_effect = True
+        if uploaded_file is not None:
+            try:
+                file_content = uploaded_file.read().decode("utf-8")
+                st.session_state.code_text = file_content
 
-    if st.session_state.start_effect and st.session_state.code_text and st.session_state.language:
-        time.sleep(5)
-        if st.session_state.language == "Other":
-            st.session_state.language = None
-        else:
-            st.session_state.language = st.session_state.language.lower()
-        typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
+                detected_language = get_file_extension(uploaded_file.name)
+                if detected_language in map(str.lower, SUPPORTED_LANGUAGES):
+                    try:
+                        lang_index = [lang.lower() for lang in SUPPORTED_LANGUAGES].index(detected_language)
+                        st.session_state.language = SUPPORTED_LANGUAGES[lang_index]
+                        st.success(f"Detected language: {st.session_state.language}")
+                    except ValueError:
+                        st.warning(f"Detected extension '{detected_language}', but could not set language.")
+            except UnicodeDecodeError:
+                st.error("Could not decode the uploaded file. Please ensure it's a text file.")
+                st.session_state.code_text = ""
+            except Exception as e:
+                st.error(f"Error processing file: {e}")
+                st.session_state.code_text = ""
+
+        if st.session_state.language:
+            st.session_state.code_text = st.text_area("Enter/Edit Code:", value=st.session_state.code_text, height=300)
+
+    with effect:
+        if effect:
+            st.session_state.start_effect = True
+
+        if st.session_state.start_effect and st.session_state.code_text and st.session_state.language:
+            time.sleep(5)
+            if st.session_state.language == "Other":
+                st.session_state.language = None
+            else:
+                st.session_state.language = st.session_state.language.lower()
+            typewriter_effect(st.session_state.code_text, language=st.session_state.language, delay=st.session_state.delay, line_numbers=st.session_state.line_numbers)
+
+    # Close the theme div
+    st.markdown('</div>', unsafe_allow_html=True)
+
+if __name__ == "__main__":
+    main()
